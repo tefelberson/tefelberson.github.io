@@ -1,0 +1,84 @@
+{{ define "main" }}
+<section class="hero">
+  <div class="hero-inner">
+    <div class="terminal-prompt">
+      <span class="prompt-dollar">$</span>
+      <span class="prompt-cmd">whoami</span>
+    </div>
+    <h1 class="hero-name">{{ .Site.Params.author.name }}</h1>
+    <p class="hero-title">{{ .Site.Params.description }}</p>
+    <blockquote class="hero-quote">
+      Breaking systems to build better defenses.
+    </blockquote>
+    <div class="hero-cat">
+      <span class="cat-cmd"><span class="prompt-dollar">$</span> cat me.txt</span>
+      <p class="hero-bio">
+        Security-minded by nature, I approach every system with a security-first mindset, with a focus on offensive
+        security, threat modeling,
+        and vulnerability research. This blog is a space dedicated to knowledge sharing and documenting my technical
+        journey.
+        From the security of an individual protocol to securing complex, critical infrastructures, I stay curious, test,
+        understand, and learn.
+        My goal is simple: keep pushing forward and bring value to the infosec community.
+        Additionally, I am a cybersecurity engineer holding an M.Sc. in Computer Science.
+      </p>
+    </div>
+    <div class="hero-cat">
+      <span class="cat-cmd"><span class="prompt-dollar">$</span> cat certifications.crt</span>
+      <div class="hero-certs">
+        <div class="cert-badge cert-coming-soon" title="Offensive Security Certified Professional">
+          <div class="cert-img-wrapper">
+            <img src="/img/certs/oscp.png" alt="OSCP" />
+            <div class="cert-overlay">
+              <span>Coming Soon</span>
+            </div>
+          </div>
+          <span>OSCP</span>
+        </div>
+        <a href="https://www.credly.com/badges/6e49fc01-8590-429d-a730-e96268c39d10/public_url" target="_blank"
+          class="cert-badge" title="HTB Certified Penetration Testing Specialist">
+          <img src="/img/certs/cpts.png" alt="CPTS" />
+          <span>CPTS</span>
+        </a>
+        <a href="https://www.credential.net/XXXX" target="_blank" class="cert-badge"
+          title="Certified Red Team Professional">
+          <img src="/img/certs/crtp.png" alt="CRTP" />
+          <span>CRTP</span>
+        </a>
+        <a href="https://www.eccouncil.org" target="_blank" class="cert-badge" title="Certified Ethical Hacker v11">
+          <img src="/img/certs/ceh.png" alt="CEHv11" />
+          <span>CEHv11</span>
+        </a>
+      </div>
+    </div>
+    <div class="hero-actions">
+        <a href="/posts/" class="btn btn-outline">Writeups</a>
+    </div>
+  </div>
+
+  </div>
+</section>
+
+<section class="recent-writeups">
+  <div class="section-inner">
+    <h2 class="section-title"><span class="prompt">#</span> Latest Writeups</h2>
+    <div class="writeup-grid">
+      {{ range first 2 (where .Site.RegularPages "Section" "posts") }}
+      <article class="writeup-card">
+        <div class="card-meta">
+          <span class="card-date">{{ .Date.Format "2006-01-02" }}</span>
+          {{ with .Params.platform }}<span class="card-platform {{ lower . }}">{{ . }}</span>{{ end }}
+          {{ with .Params.difficulty }}<span class="card-difficulty {{ lower . }}">{{ . }}</span>{{ end }}
+        </div>
+        <h3 class="card-title"><a href="{{ .Permalink }}">{{ .Title }}</a></h3>
+        {{ with .Params.tags }}
+        <div class="card-tags">
+          {{ range . }}<span class="tag">{{ . }}</span>{{ end }}
+        </div>
+        {{ end }}
+      </article>
+      {{ end }}
+    </div>
+  </div>
+</section>
+{{ end }}

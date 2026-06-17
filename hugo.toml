@@ -1,3 +1,23 @@
-baseURL = 'https://example.org/'
+baseURL = 'https://tefelberson.github.io/'
 locale = 'en-us'
-title = 'My New Hugo Project'
+title = 'XZOS'
+
+[params]
+  description = "Penetration Tester & Red Teamer"
+
+  [params.author]
+    name = "Xzos"
+
+  [params.social]
+    GitHub = "tefelberson"
+    Linkedin = "tef-elberson-djogap-34378319a"
+    HackTheBoxLab = "https://app.hackthebox.com/users/830962"
+    HackTheBoxTraining = "https://profile.hackthebox.com/profile/019d5655-ce5e-73bb-8b06-00452c135497"
+    TryHackMe = "Xzos"
+
+[menu]
+  [[menu.main]]
+    identifier = "posts"
+    name = "Writeups"
+    url = "/posts/"
+    weight = 1
