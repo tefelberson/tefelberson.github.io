@@ -40,7 +40,7 @@
           <img src="/img/certs/cpts.png" alt="CPTS" />
           <span>CPTS</span>
         </a>
-        <a href="https://www.credential.net/XXXX" target="_blank" class="cert-badge"
+        <a href="https://www.credential.net/b1d85f57-5f06-4409-8564-1a329b2851b2#acc.1mo23veK" target="_blank" class="cert-badge"
           title="Certified Red Team Professional">
           <img src="/img/certs/crtp.png" alt="CRTP" />
           <span>CRTP</span>
@@ -71,11 +71,6 @@
           {{ with .Params.difficulty }}<span class="card-difficulty {{ lower . }}">{{ . }}</span>{{ end }}
         </div>
         <h3 class="card-title"><a href="{{ .Permalink }}">{{ .Title }}</a></h3>
-        {{ with .Params.tags }}
-        <div class="card-tags">
-          {{ range . }}<span class="tag">{{ . }}</span>{{ end }}
-        </div>
-        {{ end }}
       </article>
       {{ end }}
     </div>
