@@ -438,3 +438,23 @@ main { flex: 1; }
   margin: 0;
   opacity: 0.85;
 }
+.writeup-item-link {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+  color: inherit;
+  flex-wrap: wrap;
+}
+.item-right {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.75rem;
+  flex-shrink: 0;
+}
+.item-date { white-space: nowrap; }
+.writeup-item-link:hover { text-decoration: none; }
+.writeup-item { padding: 0; }
+.writeup-item-link { padding: 1.25rem 1.5rem; }

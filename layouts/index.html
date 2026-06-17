@@ -52,7 +52,7 @@
       </div>
     </div>
     <div class="hero-actions">
-        <a href="/posts/" class="btn btn-outline">Writeups</a>
+        <a href="/writeup/" class="btn btn-outline">Writeups</a>
     </div>
   </div>
 
@@ -63,7 +63,7 @@
   <div class="section-inner">
     <h2 class="section-title"><span class="prompt">#</span> Latest Writeups</h2>
     <div class="writeup-grid">
-      {{ range first 2 (where .Site.RegularPages "Section" "posts") }}
+      {{ range first 2 (where .Site.RegularPages "Section" "writeup") }}
       <article class="writeup-card">
         <div class="card-meta">
           <span class="card-date">{{ .Date.Format "2006-01-02" }}</span>

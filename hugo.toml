@@ -1,6 +1,6 @@
 baseURL = 'https://tefelberson.github.io/'
 locale = 'en-us'
-title = 'XZOS'
+title = 'Xzos'
 
 [params]
   description = "Penetration Tester & Red Teamer"
@@ -19,5 +19,5 @@ title = 'XZOS'
   [[menu.main]]
     identifier = "posts"
     name = "Writeups"
-    url = "/posts/"
+    url = "/writeup/"
     weight = 1
